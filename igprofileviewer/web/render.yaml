@@ -3,7 +3,7 @@ services:
     name: instagram-profile-viewer
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn igprofileviewer.web.wsgi:app
     envVars:
       - key: FLASK_ENV
         value: production

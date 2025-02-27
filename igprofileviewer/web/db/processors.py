@@ -1,6 +1,8 @@
+# processors.py
+
 import json
 from datetime import datetime
-from .queue_manager import ProfileQueue
+from igprofileviewer.web.db.queue_manager import ProfileQueue
 
 def process_profile_data(profile_data):
     """Extract relevant profile information from API response."""
@@ -11,9 +13,6 @@ def process_profile_data(profile_data):
     if not user:
         raise ValueError("No user data found in profile_data")
         
-    # # Add debug logging
-    # print(f"Processing user data with fields: {user.keys()}")
-    
     try:
         return {
             'username': user.get('username'),
@@ -83,71 +82,3 @@ def process_posts(posts_data, profile_id, username):
         posts.append((post, media_list))
     
     return posts
-
-# def insert_profile_and_queue_related(supabase, profile_data, queue: ProfileQueue):
-#     """Insert profile and queue its related profiles."""
-#     # Process and insert main profile
-#     processed_profile = process_profile_data(profile_data)
-    
-#     # Get related profiles
-#     related_profiles = profile_data.get('data', {}).get('user', {}).get('edge_related_profiles', {}).get('edges', [])
-    
-#     # Insert main profile
-#     result = supabase.table('profiles').insert(processed_profile).execute()
-#     profile_id = result.data[0]['id']
-    
-#     # Queue related profiles and create relationships
-#     for edge in related_profiles:
-#         node = edge.get('node', {})
-#         username = node.get('username')
-        
-#         if username:
-#             # Add to queue for later processing
-#             queue.add_to_queue(username, node)
-            
-#             try:
-#                 # Try to get existing profile ID
-#                 related_result = supabase.table('profiles').select('id').eq('username', username).execute()
-#                 if related_result.data:
-#                     related_profile_id = related_result.data[0]['id']
-#                 else:
-#                     # Create minimal profile entry
-#                     minimal_profile = {
-#                         'username': username,
-#                         'full_name': node.get('full_name'),
-#                         'is_verified': node.get('is_verified', False),
-#                         'created_at': datetime.now().isoformat(),
-#                         'last_updated': datetime.now().isoformat()
-#                     }
-#                     related_result = supabase.table('profiles').insert(minimal_profile).execute()
-#                     related_profile_id = related_result.data[0]['id']
-                
-#                 # Insert relationship
-#                 relationship = {
-#                     'profile_id': profile_id,
-#                     'related_profile_id': related_profile_id,
-#                     'relationship_type': 'related',
-#                     'created_at': datetime.now().isoformat()
-#                 }
-#                 supabase.table('profile_relationships').insert(relationship).execute()
-                
-#             except Exception as e:
-#                 print(f"Error processing relationship for {username}: {str(e)}")
-    
-#     return profile_id, len(related_profiles)
-
-# def process_queued_profiles(supabase, queue: ProfileQueue, api):
-#     """Process profiles from the queue in batches."""
-#     while queue.has_items():
-#         batch = queue.get_next_batch()
-#         for username, cached_data in batch:
-#             try:
-#                 # Fetch full profile data
-#                 profile_data = api.get_profile(username)
-#                 # Process profile and queue its related profiles
-#                 insert_profile_and_queue_related(supabase, profile_data, queue)
-#                 print(f"Processed queued profile: {username}")
-#             except Exception as e:
-#                 print(f"Error processing queued profile {username}: {str(e)}")
-#                 # Re-queue failed profiles
-#                 queue.add_to_queue(username, cached_data)

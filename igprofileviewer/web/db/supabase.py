@@ -1,3 +1,5 @@
+# supabase.py
+
 from supabase import create_client
 import os
 import datetime
@@ -24,6 +26,9 @@ def init_supabase():
                 return client_class(url, key)
         # If we can't handle it, re-raise
         raise
+
+# Rest of the file remains the same
+# ...
 
 def process_profile_for_display(profile_data, supabase):
     # Save to database if Supabase is available

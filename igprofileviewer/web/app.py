@@ -1,32 +1,25 @@
+# app.py
+
 import os
 from flask import Flask, render_template, request, flash, redirect, url_for, send_file, Response
 from dotenv import load_dotenv
 from igprofileviewer.web.instagram_api import InstagramAPI
+from igprofileviewer.web.db.instagram_processor import InstagramProcessor
+from igprofileviewer.web.db.supabase import init_supabase
+from igprofileviewer.web.db.processors import process_profile_data, process_posts
 import json
 import requests
 from io import BytesIO
-import sys
-from pathlib import Path
-import asyncio  # Add this import
+import asyncio
 
 # Load environment variables
 load_dotenv()
 
-from flask import Flask
-from asgiref.wsgi import WsgiToAsgi
-
 app = Flask(__name__)
-# And modify the InstagramProcessor import
-from igprofileviewer.db.instagram_processor import InstagramProcessor
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 
 # Initialize Supabase client
 try:
-    # Add parent directory to path to import from db module
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from db.supabase import init_supabase
-    from db.processors import process_profile_data, process_posts
-    
     supabase = init_supabase()
     print("Supabase initialized successfully")
 except Exception as e:
@@ -39,7 +32,7 @@ except Exception as e:
     
     def process_posts(posts_data):
         return posts_data
-
+        
 def process_profile_for_display(profile_data):
     """Process profile data for display in templates."""
     user = profile_data.get('data', {}).get('user', {})
@@ -144,7 +137,6 @@ def index():
     return render_template('index.html')
 
 # Add these imports at the top
-from igprofileviewer.db.instagram_processor import InstagramProcessor
 
 # Modify the profile route
 @app.route('/profile/<username>')
