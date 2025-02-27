@@ -6,22 +6,43 @@ import datetime
 import json
 import uuid
 
+# supabase.py
+
 def init_supabase():
+    """
+    Initialize Supabase client with a workaround for the proxy parameter issue.
+    This uses monkey patching to fix the issue at runtime.
+    """
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
     
     if not url or not key:
         raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
     
-    # Try importing directly from supabase.client instead of using create_client
-    try:
+    # First, monkey patch the create_client function to handle the proxy parameter issue
+    from supabase import create_client as original_create_client
+    
+    def patched_create_client(supabase_url, supabase_key, **kwargs):
+        """A patched version of create_client that removes the proxy parameter if it exists"""
+        if 'proxy' in kwargs:
+            print("Removing 'proxy' parameter from create_client call")
+            del kwargs['proxy']
+        
+        # Import the real Client directly
         from supabase.client import Client
-        return Client(url, key)
-    except Exception as e:
-        print(f"Direct Client initialization failed: {str(e)}")
-        # Fallback to create_client
-        from supabase import create_client
-        return create_client(url, key)
+        
+        # Create the client directly, bypassing the original create_client
+        return Client(supabase_url, supabase_key, **kwargs)
+    
+    # Replace the original create_client with our patched version
+    import supabase
+    supabase.create_client = patched_create_client
+    
+    # Now use the patched create_client function
+    return patched_create_client(url, key)
+
+# Rest of the file remains the same...
+# ...
 
 def process_profile_for_display(profile_data, supabase):
     # Save to database if Supabase is available
