@@ -95,13 +95,11 @@ def main():
         
         # Get profile data
         profile_data = api.get_profile(username)
-        print(f"\nProfile data for {username}:")
-        print(profile_data)
+        print(f"\nSuccessfully fetched profile data for {username}")
         
         # Get following data
         following_data = api.get_following(username)
-        print(f"\nFollowing data for {username}:")
-        print(following_data)
+        print(f"\nSuccessfully fetched following data for {username}")
         
     except Exception as e:
         print(f"Error: {str(e)}")

@@ -33,4 +33,8 @@ ENV/
 
 # Logs
 logs/
-*.log 
+*.log
+
+# Ignore api and db directories
+/api/
+/db/ 

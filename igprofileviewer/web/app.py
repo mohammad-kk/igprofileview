@@ -1,27 +1,48 @@
 import os
 from flask import Flask, render_template, request, flash, redirect, url_for, send_file, Response
 from dotenv import load_dotenv
-from instagram_api import InstagramAPI
+from .instagram_api import InstagramAPI
 import json
 import requests
 from io import BytesIO
 import sys
-import asyncio
 from pathlib import Path
-
-# Add parent directory to path to import from db module
-sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-from igprofileviewer.db.processors import process_profile_data, process_posts
-from igprofileviewer.db.supabase import init_supabase
+import asyncio  # Add this import
 
 # Load environment variables
 load_dotenv()
 
+from flask import Flask
+from asgiref.wsgi import WsgiToAsgi
+
 app = Flask(__name__)
+# Remove these lines
+from asgiref.wsgi import WsgiToAsgi
+asgi_app = WsgiToAsgi(app)
+
+# And modify the InstagramProcessor import
+from igprofileviewer.db.instagram_processor import InstagramProcessor
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
 
 # Initialize Supabase client
-supabase = init_supabase()
+try:
+    # Add parent directory to path to import from db module
+    sys.path.append(str(Path(__file__).resolve().parent.parent))
+    from db.supabase import init_supabase
+    from db.processors import process_profile_data, process_posts
+    
+    supabase = init_supabase()
+    print("Supabase initialized successfully")
+except Exception as e:
+    print(f"Warning: Supabase initialization failed: {e}")
+    supabase = None
+    
+    # Create dummy functions if imports fail
+    def process_profile_data(profile_data):
+        return profile_data
+    
+    def process_posts(posts_data):
+        return posts_data
 
 def process_profile_for_display(profile_data):
     """Process profile data for display in templates."""
@@ -103,60 +124,15 @@ def process_profile_for_display(profile_data):
     
     profile['posts'] = posts
     profile['related_users'] = related_users
+    
+    # Save to database if Supabase is available
+    if supabase:
+        try:
+            process_profile_data(profile_data)
+        except Exception as e:
+            print(f"Warning: Failed to save profile data to database: {e}")
+    
     return profile
-
-def store_complete_profile_data(profile_data):
-    """Process and store profile data with posts in Supabase database."""
-    try:
-        # Process the profile data for database storage
-        processed_profile = process_profile_data(profile_data)
-        
-        if not processed_profile.get('username'):
-            return False, "Could not process profile data"
-        
-        username = processed_profile['username']
-            
-        # Check if profile already exists
-        existing = supabase.table('profiles').select('id').eq('username', username).execute()
-        
-        # Insert or update profile
-        if existing.data:
-            # Profile exists, update it
-            profile_id = existing.data[0]['id']
-            supabase.table('profiles').update(processed_profile).eq('id', profile_id).execute()
-        else:
-            # Insert new profile
-            result = supabase.table('profiles').insert(processed_profile).execute()
-            if not result.data:
-                return False, "Failed to save profile"
-            profile_id = result.data[0]['id']
-            
-        # Process posts data
-        user = profile_data.get('data', {}).get('user', {})
-        posts_data = user.get('edge_owner_to_timeline_media', {})
-        processed_posts = process_posts(posts_data, profile_id, username)
-        
-        posts_saved = 0
-        for post, media_list in processed_posts:
-            try:
-                # Insert post
-                post_result = supabase.table('posts').upsert(post).execute()
-                if post_result.data:
-                    post_id = post_result.data[0]['id']
-                    posts_saved += 1
-                    
-                    # Insert media for this post
-                    if media_list:
-                        media_records = [{**media, 'post_id': post_id} for media in media_list]
-                        supabase.table('post_media').insert(media_records).execute()
-            except Exception as post_error:
-                # Log error but continue with other posts
-                print(f"Error saving post: {str(post_error)}")
-                
-        return True, f"Saved profile and {posts_saved} posts for {username}"
-                
-    except Exception as e:
-        return False, f"Database error: {str(e)}"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -171,6 +147,10 @@ def index():
     
     return render_template('index.html')
 
+# Add these imports at the top
+from igprofileviewer.db.instagram_processor import InstagramProcessor
+
+# Modify the profile route
 @app.route('/profile/<username>')
 def profile(username):
     """Display profile information for a given username."""
@@ -178,17 +158,17 @@ def profile(username):
         api = InstagramAPI()
         profile_data = api.get_profile(username)
         
+        # Process profile data synchronously
+        processor = InstagramProcessor(batch_size=1, target_count=1)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(processor.process_profiles(api.api_key, username))
+        loop.close()
+        
         processed_profile = process_profile_for_display(profile_data)
         if not processed_profile:
             flash('No profile data found for this username', 'error')
             return redirect(url_for('index'))
-        
-        # Store complete profile data including posts
-        success, message = store_complete_profile_data(profile_data)
-        if success:
-            flash(message, 'info')
-        else:
-            flash(message, 'warning')
         
         return render_template('profile.html', profile=processed_profile)
         
@@ -245,4 +225,4 @@ def embed_post(shortcode):
         return f"Error embedding post: {str(e)}", 500
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
