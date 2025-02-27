@@ -2,8 +2,15 @@ Flask==2.3.3
 requests==2.31.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
-# Downgrade supabase-py to an older version that doesn't have the proxy issue
-supabase-py==0.0.2
+# Pin all Supabase-related packages to exact versions
+supabase==2.3.1
+httpx==0.24.1
+gotrue==1.0.2
+postgrest==0.10.6
+realtime==1.0.0
+storage3==0.5.4
+supafunc==0.3.1
+# Other packages
 asgiref==3.7.2
 aiohttp==3.8.5
 typing-extensions==4.7.1

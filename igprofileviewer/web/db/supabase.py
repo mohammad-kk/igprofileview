@@ -1,48 +1,67 @@
-# supabase.py
-
-from supabase import create_client
-import os
-import datetime
-import json
-import uuid
-
-# supabase.py
+# Add this to the top of your supabase.py file
 
 def init_supabase():
     """
-    Initialize Supabase client with a workaround for the proxy parameter issue.
-    This uses monkey patching to fix the issue at runtime.
+    Initialize Supabase client with extensive debugging
     """
+    import os
+    import sys
+    from supabase import __version__ as supabase_version
+    
+    # Print environment information
+    print(f"Python version: {sys.version}")
+    print(f"Supabase package version: {supabase_version}")
+    
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
+    
+    # Check environment variables
+    if not url:
+        print("ERROR: SUPABASE_URL environment variable is not set")
+    else:
+        # Print partial URL for debugging without exposing full URL
+        print(f"SUPABASE_URL is set (starts with {url[:10]}...)")
+        
+    if not key:
+        print("ERROR: SUPABASE_KEY environment variable is not set")
+    else:
+        print("SUPABASE_KEY is set (not shown for security)")
     
     if not url or not key:
         raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
     
-    # First, monkey patch the create_client function to handle the proxy parameter issue
-    from supabase import create_client as original_create_client
-    
-    def patched_create_client(supabase_url, supabase_key, **kwargs):
-        """A patched version of create_client that removes the proxy parameter if it exists"""
-        if 'proxy' in kwargs:
-            print("Removing 'proxy' parameter from create_client call")
-            del kwargs['proxy']
-        
-        # Import the real Client directly
+    # Try direct import first
+    try:
+        print("Attempting to import Client directly from supabase.client...")
         from supabase.client import Client
-        
-        # Create the client directly, bypassing the original create_client
-        return Client(supabase_url, supabase_key, **kwargs)
-    
-    # Replace the original create_client with our patched version
-    import supabase
-    supabase.create_client = patched_create_client
-    
-    # Now use the patched create_client function
-    return patched_create_client(url, key)
+        print("Successfully imported Client class")
 
-# Rest of the file remains the same...
-# ...
+        # Try to see the signature of the Client constructor
+        import inspect
+        print(f"Client.__init__ signature: {inspect.signature(Client.__init__)}")
+        
+        # Create client directly
+        print("Creating client directly with Client class...")
+        client = Client(url, key)
+        print("Successfully created client directly with Client class")
+        return client
+    except Exception as e:
+        print(f"Error creating client directly: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+    
+    # Try with create_client as fallback
+    try:
+        print("Attempting to use create_client...")
+        from supabase import create_client
+        client = create_client(url, key)
+        print("Successfully created client with create_client")
+        return client
+    except Exception as e:
+        print(f"Error using create_client: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 def process_profile_for_display(profile_data, supabase):
     # Save to database if Supabase is available
