@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: instagram-profile-viewer
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn src.igprofileviewer.web.wsgi:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: INSTAGRAM_API_KEY
+        sync: false

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Embedded Post{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            {{ embed_html|safe }}
+        </div>
+    </div>
+    <div class="mt-3">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Search</a>
+    </div>
+</div>
+
+<script async src="//www.instagram.com/embed.js"></script>
+{% endblock %} 
