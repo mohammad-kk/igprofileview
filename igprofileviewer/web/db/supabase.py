@@ -13,19 +13,8 @@ def init_supabase():
     if not url or not key:
         raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
     
-    try:
-        # Try the standard initialization first
-        return create_client(url, key)
-    except TypeError as e:
-        if 'proxy' in str(e):
-            # Handle older versions of supabase-py that don't accept proxy
-            import importlib
-            supabase_module = importlib.import_module('supabase')
-            client_class = getattr(supabase_module, 'Client', None)
-            if client_class:
-                return client_class(url, key)
-        # If we can't handle it, re-raise
-        raise
+    # Simple initialization without version-specific handling
+    return create_client(url, key)
 
 # Rest of the file remains the same
 # ...
