@@ -1,9 +1,15 @@
 import asyncio
 import aiohttp
 from typing import List, Tuple
+# Change these imports
 from queue_manager import ProfileQueue
 from processors import process_profile_data, process_posts
 from supabase import init_supabase
+
+# To these absolute imports
+from igprofileviewer.web.db.queue_manager import ProfileQueue
+from igprofileviewer.web.db.processors import process_profile_data, process_posts
+from igprofileviewer.web.db.supabase import init_supabase
 import traceback  # Add this at the top with other imports
 
 class InstagramProcessor:

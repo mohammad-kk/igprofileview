@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, flash, redirect, url_for, send_file, Response
 from dotenv import load_dotenv
-from .instagram_api import InstagramAPI
+from igprofileviewer.web.instagram_api import InstagramAPI
 import json
 import requests
 from io import BytesIO
@@ -16,10 +16,6 @@ from flask import Flask
 from asgiref.wsgi import WsgiToAsgi
 
 app = Flask(__name__)
-# Remove these lines
-from asgiref.wsgi import WsgiToAsgi
-asgi_app = WsgiToAsgi(app)
-
 # And modify the InstagramProcessor import
 from igprofileviewer.db.instagram_processor import InstagramProcessor
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key")
