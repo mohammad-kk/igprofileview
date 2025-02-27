@@ -11,3 +11,7 @@ services:
         generateValue: true
       - key: INSTAGRAM_API_KEY
         sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
