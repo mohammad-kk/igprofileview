@@ -13,11 +13,15 @@ def init_supabase():
     if not url or not key:
         raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables")
     
-    # Simple initialization without version-specific handling
-    return create_client(url, key)
-
-# Rest of the file remains the same
-# ...
+    # Try importing directly from supabase.client instead of using create_client
+    try:
+        from supabase.client import Client
+        return Client(url, key)
+    except Exception as e:
+        print(f"Direct Client initialization failed: {str(e)}")
+        # Fallback to create_client
+        from supabase import create_client
+        return create_client(url, key)
 
 def process_profile_for_display(profile_data, supabase):
     # Save to database if Supabase is available

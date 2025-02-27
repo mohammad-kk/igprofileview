@@ -23,7 +23,11 @@ try:
     supabase = init_supabase()
     print("Supabase initialized successfully")
 except Exception as e:
-    print(f"Warning: Supabase initialization failed: {e}")
+    print(f"Warning: Supabase initialization failed: {str(e)}")
+    print(f"Error type: {type(e).__name__}")
+    # Print traceback for more detailed debugging
+    import traceback
+    traceback.print_exc()
     supabase = None
     
     # Create dummy functions if imports fail
@@ -32,7 +36,7 @@ except Exception as e:
     
     def process_posts(posts_data):
         return posts_data
-        
+
 def process_profile_for_display(profile_data):
     """Process profile data for display in templates."""
     user = profile_data.get('data', {}).get('user', {})
